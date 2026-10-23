@@ -151,7 +151,7 @@ class ShizukuTetherSessionService : Service() {
         startJob = scope.launch {
             val outcome = sessionLock.withLock {
                 if (attempt != generation) return@launch
-                runCatching { controller.start(logging = true, vpnMode = VpnMode.AUTO) }
+                runCatching { controller.start(logging = true, vpnMode = selectedVpnMode) }
             }
             if (attempt != generation) return@launch
             outcome.exceptionOrNull()?.let { failure ->
@@ -239,8 +239,16 @@ class ShizukuTetherSessionService : Service() {
         private var liveService: ShizukuTetherSessionService? = null
         val isRunning: Boolean get() = liveService != null
         val isSessionUp: Boolean get() = liveState.value.status == UiStatus.CONNECTED
+        private var selectedVpnMode: VpnMode = VpnMode.AUTO
 
-        fun start(context: Context) {
+        fun setVpnMode(mode: VpnMode) {
+            selectedVpnMode = mode
+        }
+
+        fun getVpnMode(): VpnMode = selectedVpnMode
+
+        fun start(context: Context, mode: VpnMode = selectedVpnMode) {
+            selectedVpnMode = mode
             val intent = Intent(context, ShizukuTetherSessionService::class.java)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 context.startForegroundService(intent)

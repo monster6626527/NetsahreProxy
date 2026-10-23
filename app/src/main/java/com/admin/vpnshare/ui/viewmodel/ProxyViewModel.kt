@@ -412,8 +412,19 @@ class ProxyViewModel(application: Application) : AndroidViewModel(application) {
         com.admin.vpnshare.shizuku.ShizukuGate.remedy(context, _shizukuState.value)
     }
 
+    private val _vpnMode = MutableStateFlow(
+        com.admin.vpnshare.shizuku.parseVpnMode(prefs.getString("shizuku_vpn_mode", "AUTO"))
+    )
+    val vpnMode: StateFlow<com.admin.vpnshare.shizuku.VpnMode> = _vpnMode.asStateFlow()
+
+    fun setVpnMode(mode: com.admin.vpnshare.shizuku.VpnMode) {
+        _vpnMode.value = mode
+        prefs.edit().putString("shizuku_vpn_mode", mode.name).apply()
+        com.admin.vpnshare.shizuku.ShizukuTetherSessionService.setVpnMode(mode)
+    }
+
     fun startShizukuTether(context: Context) {
-        com.admin.vpnshare.shizuku.ShizukuTetherSessionService.start(context)
+        com.admin.vpnshare.shizuku.ShizukuTetherSessionService.start(context, _vpnMode.value)
     }
 
     fun stopShizukuTether(context: Context) {

@@ -54,6 +54,7 @@ fun ShizukuDirectTetherCard(
     val context = LocalContext.current
     val shizukuState by viewModel.shizukuState.collectAsState()
     val sessionState by viewModel.shizukuSessionState.collectAsState()
+    val currentVpnMode by viewModel.vpnMode.collectAsState()
 
     val isConnected = sessionState.status == UiStatus.CONNECTED
     val isLoading = sessionState.status == UiStatus.LOADING || sessionState.isBusy
@@ -451,6 +452,51 @@ fun ShizukuDirectTetherCard(
                     }
                 }
 
+                // VPN ROUTING MODE SELECTOR (Auto vs Direct Bypass vs Strict)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    listOf(
+                        Pair(com.admin.vpnshare.shizuku.VpnMode.AUTO, "⚡ Auto VPN"),
+                        Pair(com.admin.vpnshare.shizuku.VpnMode.NEVER, "🌐 Direct (No VPN)"),
+                        Pair(com.admin.vpnshare.shizuku.VpnMode.ALWAYS, "🛡️ Strict VPN")
+                    ).forEach { (mode, label) ->
+                        val isModeSelected = currentVpnMode == mode
+                        Surface(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(10.dp))
+                                .clickable {
+                                    viewModel.setVpnMode(mode)
+                                    if (isConnected) {
+                                        Toast.makeText(context, "Mode updated for next start", Toast.LENGTH_SHORT).show()
+                                    }
+                                },
+                            shape = RoundedCornerShape(10.dp),
+                            color = if (isModeSelected) NeonCyan.copy(alpha = if (isDark) 0.22f else 0.15f) else SurfaceVariantColor.copy(alpha = 0.5f),
+                            border = androidx.compose.foundation.BorderStroke(
+                                if (isModeSelected) 1.dp else 0.5.dp,
+                                if (isModeSelected) NeonCyan else CardBorderColor.copy(alpha = 0.5f)
+                            )
+                        ) {
+                            Text(
+                                text = label,
+                                fontSize = 9.5.sp,
+                                fontFamily = InterFont,
+                                fontWeight = if (isModeSelected) FontWeight.Bold else FontWeight.Medium,
+                                color = if (isModeSelected) NeonCyan else TextSecondary,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.padding(vertical = 6.dp, horizontal = 2.dp),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                }
+
                 // HERO ACTION BUTTON (The Power Switch)
                 Box(
                     modifier = Modifier
@@ -616,7 +662,11 @@ fun ShizukuDirectTetherCard(
                                     }
                                     Spacer(modifier = Modifier.height(3.dp))
                                     Text(
-                                        text = if (sessionState.isVpnBound) "VPN Bound" else "Default",
+                                        text = when {
+                                            sessionState.isVpnBound -> "VPN Bound"
+                                            sessionState.isVpnBypassed || currentVpnMode == com.admin.vpnshare.shizuku.VpnMode.NEVER -> "Direct Net"
+                                            else -> "Direct Net"
+                                        },
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.Bold,
                                         fontFamily = SpaceMonoFont,

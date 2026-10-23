@@ -1,30 +1,53 @@
 package com.admin.vpnshare.shizuku
 
+import android.content.Context
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
-import android.net.NetworkRequest
-import android.content.Context
+import java.util.concurrent.atomic.AtomicBoolean
 
 enum class VpnMode { AUTO, ALWAYS, NEVER }
 
 fun parseVpnMode(raw: String?): VpnMode =
     VpnMode.entries.firstOrNull { it.name.equals(raw, ignoreCase = true) } ?: VpnMode.AUTO
 
-class ConnectivityVpnLocator(private val connectivityManager: ConnectivityManager) {
-    fun currentVpnHandle(): Long =
-        connectivityManager.allNetworks
-            .firstOrNull { network -> isVpn(network) }
-            ?.networkHandle
-            ?: UNBOUND
+internal const val UNBOUND = 0L
+
+internal data class VpnCandidate(val handle: Long, val isVpn: Boolean, val isActive: Boolean)
+
+internal fun selectVpnHandle(candidates: List<VpnCandidate>): Long {
+    val active = candidates.firstOrNull { it.isActive } ?: return UNBOUND
+    if (!active.isVpn) return UNBOUND
+    return active.handle
+}
+
+class ConnectivityVpnLocator(
+    private val connectivityManager: ConnectivityManager,
+) {
+    fun currentVpnHandle(): Long = runCatching {
+        selectVpnHandle(candidates())
+    }.getOrElse { failure ->
+        SessionLog.warn("could not read the active network: ${failure.message}")
+        UNBOUND
+    }
+
+    private fun candidates(): List<VpnCandidate> {
+        val active = connectivityManager.activeNetwork
+        return connectivityManager.allNetworks.map { network ->
+            VpnCandidate(
+                handle = handleOf(network),
+                isVpn = isVpn(network),
+                isActive = network == active,
+            )
+        }
+    }
 
     private fun isVpn(network: Network): Boolean =
         connectivityManager.getNetworkCapabilities(network)
             ?.hasTransport(NetworkCapabilities.TRANSPORT_VPN) == true
 
-    private companion object {
-        const val UNBOUND = 0L
-    }
+    private fun handleOf(network: Network): Long =
+        runCatching { network.networkHandle }.getOrDefault(UNBOUND)
 }
 
 sealed interface VpnBinding {
@@ -34,15 +57,78 @@ sealed interface VpnBinding {
 
 class VpnWatchdog(
     private val locator: ConnectivityVpnLocator,
-    private val onBindingChanged: (VpnBinding) -> Unit,
+    private val onChange: (VpnBinding) -> Unit,
 ) {
-    fun adoptCurrentVpn(): Long = locator.currentVpnHandle()
+    private val isRunning = AtomicBoolean(false)
+    private var thread: Thread? = null
+    private var boundHandle = UNBOUND
+    private var consecutiveMisses = 0
+
+    fun adoptCurrentVpn(): Long {
+        boundHandle = locator.currentVpnHandle()
+        return boundHandle
+    }
 
     fun start() {
-        // Active polling / observer
+        if (!isRunning.compareAndSet(false, true)) return
+        thread = Thread({ monitor() }, "vpn-watchdog").apply {
+            isDaemon = true
+            start()
+        }
     }
 
     fun stop() {
+        isRunning.set(false)
+        val watcher = thread
+        thread = null
+        if (watcher != null && watcher != Thread.currentThread()) watcher.interrupt()
+    }
+
+    private fun monitor() {
+        while (isRunning.get()) {
+            val didSleep = runCatching { Thread.sleep(POLL_INTERVAL_MS) }.isSuccess
+            if (!didSleep || !isRunning.get()) return
+            val binding = evaluate() ?: continue
+            if (binding is VpnBinding.Lost) isRunning.set(false)
+            onChange(binding)
+            if (binding is VpnBinding.Lost) return
+        }
+    }
+
+    internal fun evaluate(): VpnBinding? {
+        val observed = locator.currentVpnHandle()
+        if (observed != UNBOUND) return adopt(observed)
+        if (boundHandle == UNBOUND) return null
+        consecutiveMisses++
+        if (consecutiveMisses < MISSES_BEFORE_TEARDOWN) {
+            SessionLog.warn(
+                "vpn strike $consecutiveMisses/$MISSES_BEFORE_TEARDOWN: " +
+                    "no VPN present, session is bound to $boundHandle",
+            )
+            return null
+        }
+        return VpnBinding.Lost(VPN_LOST_DETAIL)
+    }
+
+    private fun adopt(observed: Long): VpnBinding? {
+        consecutiveMisses = 0
+        if (observed == boundHandle) return null
+        val previous = boundHandle
+        boundHandle = observed
+        SessionLog.info(adoptionMessage(previous, observed))
+        return VpnBinding.Adopted(observed)
+    }
+
+    private fun adoptionMessage(previous: Long, adopted: Long): String = when (previous) {
+        UNBOUND -> "vpn adopted: pinning the datapath to handle $adopted"
+        else -> "vpn replaced: handle $previous is gone, re-pinning to $adopted"
+    }
+
+    private companion object {
+        const val POLL_INTERVAL_MS = 5_000L
+        const val MISSES_BEFORE_TEARDOWN = 2
+        const val VPN_LOST_DETAIL =
+            "VPN disconnected. Session stopped to keep devices protected."
     }
 }
 
@@ -70,6 +156,8 @@ class VpnUpstream(
             group.bindDatapathTo(adopted)
             handle = adopted
             SessionLog.info("VPN present at start: datapath pinned to handle $adopted")
+        } else {
+            SessionLog.info("No active VPN active on default route: datapath unbound (direct traffic)")
         }
         watcher.start()
     }
@@ -92,9 +180,5 @@ class VpnUpstream(
                 onLost(binding.problem)
             }
         }
-    }
-
-    private companion object {
-        const val UNBOUND = 0L
     }
 }

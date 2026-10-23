@@ -1,0 +1,8 @@
+{
+  "name": "NetShare Proxy",
+  "description": "Turn your device into a local proxy server to share VPN and internet connection with PC, console, TV, or other devices.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

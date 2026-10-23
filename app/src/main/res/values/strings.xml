@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">NetShare Proxy</string>
+    <string name="app_subtitle">PROXY SERVER</string>
+    <string name="notification_channel_name">NetShare Proxy Service</string>
+    <string name="notification_title_active">NetShare Proxy — Active ●</string>
+    <string name="notification_title_stopped">NetShare Proxy — Stopped</string>
+    <string name="drawer_title">NetShare Proxy</string>
+    <string name="about_developer">Euro Admin (Yuro) • @A_DM_IN123</string>
+    <string name="tile_direct_tethering">Direct VPN Tether</string>
+</resources>

@@ -96,7 +96,7 @@ fun FloatingBottomNavigationBar(
             verticalAlignment = Alignment.CenterVertically
         ) {
             items.forEach { item ->
-                val isSelected = selectedRoute == item.route
+                val isSelected = selectedRoute == item.route || (item.route == "home" && selectedRoute == "direct")
                 
                 val iconScale by animateFloatAsState(
                     targetValue = if (isSelected) 1.15f else 1.0f,

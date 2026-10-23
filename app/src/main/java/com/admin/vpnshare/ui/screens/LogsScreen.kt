@@ -316,6 +316,6 @@ fun LogsScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(90.dp))
+        Spacer(modifier = Modifier.height(130.dp).navigationBarsPadding())
     }
 }

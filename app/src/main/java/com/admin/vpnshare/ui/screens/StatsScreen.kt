@@ -478,6 +478,10 @@ fun StatsScreen(
                 onCopyIp = { copyToClipboard("Proxy IP", bestIp) }
             )
         }
+
+        item {
+            Spacer(modifier = Modifier.height(125.dp).navigationBarsPadding())
+        }
     }
 }
 

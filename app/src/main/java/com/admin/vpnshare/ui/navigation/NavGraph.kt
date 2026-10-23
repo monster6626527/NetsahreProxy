@@ -129,6 +129,17 @@ fun MainNavGraph(viewModel: ProxyViewModel) {
                                     coroutineScope.launch { drawerState.open() }
                                 }
                             )
+                            "direct" -> {
+                                LaunchedEffect(Unit) {
+                                    viewModel.setSharingMode("DIRECT")
+                                }
+                                HomeScreen(
+                                    viewModel = viewModel,
+                                    onOpenDrawer = {
+                                        coroutineScope.launch { drawerState.open() }
+                                    }
+                                )
+                            }
                             "stats" -> StatsScreen(viewModel = viewModel)
                             "clients" -> ClientsScreen(viewModel = viewModel)
                             "logs" -> LogsScreen(viewModel = viewModel)

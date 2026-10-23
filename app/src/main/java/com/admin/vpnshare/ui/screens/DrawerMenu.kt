@@ -361,6 +361,7 @@ fun DrawerMenu(
 
                 val navItems = listOf(
                     Triple("home", LanguageManager.get("home"), Icons.Default.Home),
+                    Triple("direct", LanguageManager.get("method_direct"), Icons.Default.Bolt),
                     Triple("stats", LanguageManager.get("stats"), Icons.Default.BarChart),
                     Triple("clients", LanguageManager.get("clients"), Icons.Default.Devices),
                     Triple("logs", LanguageManager.get("logs"), Icons.Default.Terminal),

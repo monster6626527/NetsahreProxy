@@ -244,7 +244,7 @@ fun ClientsScreen(
             EmptyClientsState()
         } else {
             LazyColumn(
-                contentPadding = PaddingValues(bottom = 120.dp),
+                contentPadding = PaddingValues(bottom = 140.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(connectedClients, key = { it.ip }) { client ->

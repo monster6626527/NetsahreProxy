@@ -280,11 +280,12 @@ fun LogsScreen(
                 },
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(12.dp),
+                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
                 border = androidx.compose.foundation.BorderStroke(1.dp, NeonCyan)
             ) {
-                Icon(Icons.Default.ContentCopy, contentDescription = null, tint = NeonCyan, modifier = Modifier.size(16.dp))
+                Icon(Icons.Default.ContentCopy, contentDescription = null, tint = NeonCyan, modifier = Modifier.size(15.dp))
                 Spacer(modifier = Modifier.width(4.dp))
-                Text("Copy", color = NeonCyan, fontFamily = RajdhaniFont, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                Text("Copy", color = NeonCyan, fontFamily = RajdhaniFont, fontWeight = FontWeight.Bold, fontSize = 12.sp, maxLines = 1)
             }
 
             OutlinedButton(
@@ -294,11 +295,12 @@ fun LogsScreen(
                 },
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(12.dp),
+                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
                 border = androidx.compose.foundation.BorderStroke(1.dp, NeonPurple)
             ) {
-                Icon(Icons.Default.Save, contentDescription = null, tint = NeonPurple, modifier = Modifier.size(16.dp))
+                Icon(Icons.Default.Save, contentDescription = null, tint = NeonPurple, modifier = Modifier.size(15.dp))
                 Spacer(modifier = Modifier.width(4.dp))
-                Text("Export", color = NeonPurple, fontFamily = RajdhaniFont, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                Text("Export", color = NeonPurple, fontFamily = RajdhaniFont, fontWeight = FontWeight.Bold, fontSize = 12.sp, maxLines = 1)
             }
 
             OutlinedButton(
@@ -308,11 +310,12 @@ fun LogsScreen(
                 },
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(12.dp),
+                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
                 border = androidx.compose.foundation.BorderStroke(1.dp, NeonRed)
             ) {
-                Icon(Icons.Default.Delete, contentDescription = null, tint = NeonRed, modifier = Modifier.size(16.dp))
+                Icon(Icons.Default.Delete, contentDescription = null, tint = NeonRed, modifier = Modifier.size(15.dp))
                 Spacer(modifier = Modifier.width(4.dp))
-                Text("Clear", color = NeonRed, fontFamily = RajdhaniFont, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                Text("Clear", color = NeonRed, fontFamily = RajdhaniFont, fontWeight = FontWeight.Bold, fontSize = 12.sp, maxLines = 1)
             }
         }
 

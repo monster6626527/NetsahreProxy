@@ -255,79 +255,92 @@ fun HomeScreen(
             }
 
             // DEDICATED MODE SWITCHING: DIRECT TETHERING vs PROXY SERVER
-            if (sharingMode == "DIRECT" || isDirectActive) {
-                // 1. DEDICATED ROOTLESS DIRECT TETHERING DASHBOARD
-                ShizukuDirectTetherCard(viewModel = viewModel)
-            } else {
-                // 2. DEDICATED PROXY SERVER DASHBOARD
-                HeroPowerButton(
-                    isRunning = isHttpRunning,
-                    isStarting = isStarting,
-                    onToggle = {
-                        val hPort = httpPortText.toIntOrNull() ?: 8080
-                        viewModel.toggleHttpProxy(context, hPort)
+            AnimatedContent(
+                targetState = (sharingMode == "DIRECT" || isDirectActive),
+                transitionSpec = {
+                    (fadeIn(animationSpec = tween(280)) + slideInHorizontally(animationSpec = tween(280)) { if (targetState) it / 3 else -it / 3 })
+                        .togetherWith(fadeOut(animationSpec = tween(220)) + slideOutHorizontally(animationSpec = tween(220)) { if (targetState) -it / 3 else it / 3 })
+                },
+                label = "modeTransition"
+            ) { isDirectModeActive ->
+                if (isDirectModeActive) {
+                    // 1. DEDICATED ROOTLESS DIRECT TETHERING DASHBOARD
+                    ShizukuDirectTetherCard(viewModel = viewModel)
+                } else {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        HeroPowerButton(
+                            isRunning = isHttpRunning,
+                            isStarting = isStarting,
+                            onToggle = {
+                                val hPort = httpPortText.toIntOrNull() ?: 8080
+                                viewModel.toggleHttpProxy(context, hPort)
+                            }
+                        )
+
+                        // ACTIVE INTERFACE CARD WITH SIGNAL BARS & LATENCY
+                        ActiveInterfaceCard(
+                            ipAddress = activeIp,
+                            interfaceName = activeIfaceName,
+                            connectedClients = activeConnections,
+                            signalBars = signalBars,
+                            latencyMs = latencyMs,
+                            onLatencyClick = {
+                                Toast.makeText(context, "Network Latency: ${latencyMs}ms (Gateway 8.8.8.8)", Toast.LENGTH_SHORT).show()
+                            }
+                        )
+
+                        // SPEED SHARING METRICS (SIDE-BY-SIDE)
+                        SpeedSharingRow(
+                            downloadSpeedStr = viewModel.formatSpeed(downloadSpeed),
+                            uploadSpeedStr = viewModel.formatSpeed(uploadSpeed)
+                        )
+
+                        // LIVE BANDWIDTH CANVAS CHART
+                        LiveBandwidthChart(
+                            downloadHistory = historyDown,
+                            uploadHistory = historyUp,
+                            currentDownSpeed = viewModel.formatSpeed(downloadSpeed),
+                            currentUpSpeed = viewModel.formatSpeed(uploadSpeed)
+                        )
+
+                        // SERVER CONFIGURATION CARD
+                        ServerConfigurationCard(
+                            isHttpRunning = isHttpRunning,
+                            isSocksRunning = isSocksRunning,
+                            httpPortText = httpPortText,
+                            socksPortText = socksPortText,
+                            onHttpPortChange = {
+                                httpPortText = it
+                                it.toIntOrNull()?.let { p -> viewModel.setHttpPort(p) }
+                            },
+                            onSocksPortChange = {
+                                socksPortText = it
+                                it.toIntOrNull()?.let { p -> viewModel.setSocksPort(p) }
+                            },
+                            onToggleHttp = {
+                                val port = httpPortText.toIntOrNull() ?: 8080
+                                viewModel.toggleHttpProxy(context, port)
+                            },
+                            onToggleSocks = {
+                                val port = socksPortText.toIntOrNull() ?: 1080
+                                viewModel.toggleSocksProxy(context, port)
+                            }
+                        )
+
+                        // USB TETHERING CARD
+                        UsbTetheringCard(
+                            usbStatus = usbStatus,
+                            expanded = usbExpanded,
+                            onToggleExpand = { usbExpanded = !usbExpanded }
+                        )
                     }
-                )
-
-                // ACTIVE INTERFACE CARD WITH SIGNAL BARS & LATENCY
-                ActiveInterfaceCard(
-                    ipAddress = activeIp,
-                    interfaceName = activeIfaceName,
-                    connectedClients = activeConnections,
-                    signalBars = signalBars,
-                    latencyMs = latencyMs,
-                    onLatencyClick = {
-                        Toast.makeText(context, "Network Latency: ${latencyMs}ms (Gateway 8.8.8.8)", Toast.LENGTH_SHORT).show()
-                    }
-                )
-
-                // SPEED SHARING METRICS (SIDE-BY-SIDE)
-                SpeedSharingRow(
-                    downloadSpeedStr = viewModel.formatSpeed(downloadSpeed),
-                    uploadSpeedStr = viewModel.formatSpeed(uploadSpeed)
-                )
-
-                // LIVE BANDWIDTH CANVAS CHART
-                LiveBandwidthChart(
-                    downloadHistory = historyDown,
-                    uploadHistory = historyUp,
-                    currentDownSpeed = viewModel.formatSpeed(downloadSpeed),
-                    currentUpSpeed = viewModel.formatSpeed(uploadSpeed)
-                )
-
-                // SERVER CONFIGURATION CARD
-                ServerConfigurationCard(
-                    isHttpRunning = isHttpRunning,
-                    isSocksRunning = isSocksRunning,
-                    httpPortText = httpPortText,
-                    socksPortText = socksPortText,
-                    onHttpPortChange = {
-                        httpPortText = it
-                        it.toIntOrNull()?.let { p -> viewModel.setHttpPort(p) }
-                    },
-                    onSocksPortChange = {
-                        socksPortText = it
-                        it.toIntOrNull()?.let { p -> viewModel.setSocksPort(p) }
-                    },
-                    onToggleHttp = {
-                        val port = httpPortText.toIntOrNull() ?: 8080
-                        viewModel.toggleHttpProxy(context, port)
-                    },
-                    onToggleSocks = {
-                        val port = socksPortText.toIntOrNull() ?: 1080
-                        viewModel.toggleSocksProxy(context, port)
-                    }
-                )
-
-                // USB TETHERING CARD
-                UsbTetheringCard(
-                    usbStatus = usbStatus,
-                    expanded = usbExpanded,
-                    onToggleExpand = { usbExpanded = !usbExpanded }
-                )
+                }
             }
 
-            Spacer(modifier = Modifier.height(125.dp).navigationBarsPadding())
+            Spacer(modifier = Modifier.height(140.dp).navigationBarsPadding())
         }
 
         // UNIFIED FROSTED CYBER TOP BAR
@@ -474,14 +487,14 @@ fun HomeScreen(
             }
         }
 
-        // ANIMATED THEME ACTIVATION PILL BANNER (ELEGANT DESIGN WITH SMOOTH ANIMATION)
+        // ANIMATED THEME ACTIVATION PILL BANNER (ELEGANT FLOATING DROP NOTIFICATION)
         AnimatedVisibility(
             visible = themeChangeBanner != null,
-            enter = slideInVertically(initialOffsetY = { it / 2 }) + fadeIn(),
-            exit = slideOutVertically(targetOffsetY = { it / 2 }) + fadeOut(),
+            enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
+            exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
             modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 115.dp)
+                .align(Alignment.TopCenter)
+                .padding(top = 74.dp)
         ) {
             themeChangeBanner?.let { bannerText ->
                 val isDarkThemeNow = ThemeManager.isDarkMode

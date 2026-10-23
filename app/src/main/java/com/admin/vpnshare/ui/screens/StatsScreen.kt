@@ -87,7 +87,7 @@ fun StatsScreen(
             .fillMaxSize()
             .background(BgColor)
             .padding(horizontal = 16.dp),
-        contentPadding = PaddingValues(top = 16.dp, bottom = 120.dp),
+        contentPadding = PaddingValues(top = 16.dp, bottom = 145.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {

@@ -241,7 +241,15 @@ fun ClientsScreen(
         }
 
         if (connectedClients.isEmpty()) {
-            EmptyClientsState()
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .padding(bottom = 90.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                EmptyClientsState()
+            }
         } else {
             LazyColumn(
                 contentPadding = PaddingValues(bottom = 140.dp),

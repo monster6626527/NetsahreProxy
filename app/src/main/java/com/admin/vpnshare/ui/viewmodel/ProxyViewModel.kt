@@ -419,4 +419,8 @@ class ProxyViewModel(application: Application) : AndroidViewModel(application) {
     fun stopShizukuTether(context: Context) {
         com.admin.vpnshare.shizuku.ShizukuTetherSessionService.stop(context)
     }
+
+    fun clearShizukuError() {
+        com.admin.vpnshare.shizuku.ShizukuTetherSessionService.clearError()
+    }
 }

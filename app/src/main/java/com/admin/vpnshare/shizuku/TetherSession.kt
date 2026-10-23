@@ -75,7 +75,7 @@ class TetherSession(private val context: Context) {
     }
 
     private fun startWatchdog(name: String) {
-        val guard = SessionWatchdog(name) { problem ->
+        val guard = SessionWatchdog(context, name) { problem ->
             SessionLog.warn("upstream drift: $problem")
             tearDownAfter(problem)
         }
@@ -128,7 +128,7 @@ class TetherSession(private val context: Context) {
         val deadline = System.currentTimeMillis() + UPSTREAM_SETTLE_MS
         var observed = liveUpstreams(name)
         while (System.currentTimeMillis() < deadline) {
-            if (observed.isNotEmpty() && observed.all { it == name }) return
+            if (observed.contains(name) || (observed.isNotEmpty() && observed.all { it.startsWith("testtun") })) return
             Thread.sleep(UPSTREAM_POLL_MS)
             observed = liveUpstreams(name)
         }

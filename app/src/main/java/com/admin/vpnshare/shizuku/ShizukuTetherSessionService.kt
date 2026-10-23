@@ -259,5 +259,9 @@ class ShizukuTetherSessionService : Service() {
                 context.startService(intent)
             }
         }
+
+        fun clearError() {
+            sessionState.update { it.copy(lastError = "") }
+        }
     }
 }

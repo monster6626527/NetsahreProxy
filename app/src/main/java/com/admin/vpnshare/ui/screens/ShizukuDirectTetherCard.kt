@@ -710,7 +710,7 @@ fun ShizukuDirectTetherCard(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
-                            modifier = Modifier.padding(12.dp),
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
@@ -720,8 +720,15 @@ fun ShizukuDirectTetherCard(
                                 fontSize = 11.5.sp,
                                 color = NeonRed,
                                 fontWeight = FontWeight.Medium,
-                                lineHeight = 15.sp
+                                lineHeight = 15.sp,
+                                modifier = Modifier.weight(1f)
                             )
+                            IconButton(
+                                onClick = { viewModel.clearShizukuError() },
+                                modifier = Modifier.size(24.dp)
+                            ) {
+                                Icon(Icons.Default.Close, contentDescription = "Dismiss", tint = NeonRed, modifier = Modifier.size(16.dp))
+                            }
                         }
                     }
                 }

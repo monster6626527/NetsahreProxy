@@ -230,7 +230,15 @@ data class UpstreamObservation(
     val didTimeout: Boolean,
 ) {
     fun liveInterfaceNames(owned: String): List<String> {
-        val (live, absent) = interfaceNames.partition { it == owned || interfaceExists(it) }
+        val filtered = interfaceNames.filter { candidate ->
+            // Defunct testtun interfaces from previous sessions must never be treated as valid upstreams
+            if (candidate.startsWith("testtun") && candidate != owned) {
+                false
+            } else {
+                candidate == owned || interfaceExists(candidate)
+            }
+        }
+        val (live, absent) = filtered.partition { it == owned || interfaceExists(it) }
         if (absent.isNotEmpty()) {
             SessionLog.warn("ignoring upstream that no longer exists: $absent")
         }
@@ -238,8 +246,11 @@ data class UpstreamObservation(
     }
 }
 
-private fun interfaceExists(name: String): Boolean =
-    runCatching { java.io.File("/sys/class/net/$name").exists() }.getOrDefault(true)
+internal fun interfaceExists(name: String): Boolean =
+    runCatching {
+        val ni = java.net.NetworkInterface.getByName(name)
+        ni != null
+    }.getOrDefault(false)
 
 class UpstreamInspector(private val deadlineMs: Long = DEFAULT_DEADLINE_MS) {
     fun observe(): UpstreamObservation = run("tethering")
@@ -271,10 +282,18 @@ class UpstreamInspector(private val deadlineMs: Long = DEFAULT_DEADLINE_MS) {
     }
 
     private fun parseUpstreamInterfaces(output: String): List<String> {
-        val interesting = output.lineSequence()
+        val candidateLines = output.lineSequence()
             .map(String::trim)
-            .filter { line -> UPSTREAM_HINTS.any { hint -> line.startsWith(hint, ignoreCase = true) } }
-        return interesting
+            .filter { line ->
+                // Avoid historical dump log lines from prior sessions
+                !line.contains("History", ignoreCase = true) &&
+                !line.contains("Dump of", ignoreCase = true) &&
+                UPSTREAM_HINTS.any { hint -> line.contains(hint, ignoreCase = true) }
+            }
+            .toList()
+
+        val activeLines = if (candidateLines.size > 2) candidateLines.takeLast(2) else candidateLines
+        return activeLines
             .flatMap { line -> INTERFACE_PATTERN.findAll(line).map { it.value } }
             .distinct()
             .toList()
